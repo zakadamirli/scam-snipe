@@ -48,5 +48,20 @@ services:
     environment:
       KAFKA_BROKER_CONNECT: kafka:9092
 
+  order-service:
+    build:
+      context: ./order-service
+    container_name: order-service
+    depends_on:
+      - kafka
+      - postgres
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/frauddb
+      SPRING_DATASOURCE_USERNAME: frauduser
+      SPRING_DATASOURCE_PASSWORD: fraudpass
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
 volumes:
   postgres_data:
