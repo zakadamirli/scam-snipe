@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 public class OrderRequest {
     private String orderId;
-    private String userId;
+    private Long userId;
     private Double amount;
 }
