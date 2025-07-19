@@ -76,5 +76,21 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_PROFILES_ACTIVE: docker
 
+  fraud-service:
+    build:
+      context: ./fraud-detection-service
+    container_name: fraud-service
+    depends_on:
+      - kafka
+      - postgres
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/frauddb
+      SPRING_DATASOURCE_USERNAME: frauduser
+      SPRING_DATASOURCE_PASSWORD: fraudpass
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_PROFILES_ACTIVE: docker
+
 volumes:
   postgres_data:
