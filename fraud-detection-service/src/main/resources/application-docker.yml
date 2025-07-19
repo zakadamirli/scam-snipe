@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/frauddb
+    username: frauduser
+    password: fraudpass
+    driver-class-name: org.postgresql.Driver
+
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: fraud-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+app:
+  kafka:
+    enabled: true
