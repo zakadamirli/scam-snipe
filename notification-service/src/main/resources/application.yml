@@ -1,4 +1,13 @@
+# notification-service/src/main/resources/application-docker.yml
+notification:
+  admin-email: ${ADMIN_EMAIL}
+  from-email: ${FROM_EMAIL}
+
 spring:
-  jpa:
-    hibernate:
-      ddl-auto:
+  profiles:
+    active: local
+  application:
+    name: notification-service
+
+server:
+  port: 8084

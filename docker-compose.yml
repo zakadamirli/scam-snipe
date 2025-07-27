@@ -23,6 +23,12 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   postgres:
     image: postgres:15
@@ -91,6 +97,26 @@ services:
       SPRING_DATASOURCE_PASSWORD: fraudpass
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_PROFILES_ACTIVE: docker
+
+  notification-service:
+    build:
+      context: ./notification-service
+    container_name: notification-service
+    ports:
+      - "8084:8084"
+    environment:
+      - SMTP_KEY_VALUE=${SMTP_KEY_VALUE}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - FROM_EMAIL=${FROM_EMAIL}
+      - BREVO_USERNAME=${BREVO_USERNAME}
+      - BREVO_HOST=${BREVO_HOST}
+      - BREVO_PASSWORD=${BREVO_PASSWORD}
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file:
+      - .env
 
 volumes:
   postgres_data:

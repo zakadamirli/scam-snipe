@@ -19,6 +19,7 @@ public class NotificationService {
     @KafkaListener(topics = "fraud-notifications", groupId = "notification-group")
     public void handleFraudNotification(String message) {
         log.info("📬 Received fraud notification: {}", message);
+        sendTestEmail(); //if fraud is found - throw test message
 
         try {
             if (message.contains("Fraud detected")) {
