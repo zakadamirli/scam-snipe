@@ -1,8 +1,10 @@
 package com.zekademirli.frauddetectionservice.service;
 
 import com.zekademirli.frauddetectionservice.dto.OrderRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -12,10 +14,12 @@ import java.math.BigDecimal;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FraudDetectionService {
 
-
     private static final BigDecimal SUSPICIOUS_AMOUNT_THRESHOLD = new BigDecimal("1000.00");
+
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     @KafkaListener(
             topics = "orders",
@@ -32,14 +36,8 @@ public class FraudDetectionService {
         log.info("Topic: {}, Partition: {}, Offset: {}", topic, partition, offset);
         log.info("Raw OrderRequest: {}", orderRequest);
 
-        if (orderRequest == null) {
-            log.warn("❌ Received null order from topic: {}, partition: {}, offset: {}. " +
-                    "This might be due to deserialization error.", topic, partition, offset);
-            return;
-        }
-
-        if (isInvalidOrder(orderRequest)) {
-            log.warn("❌ Received invalid order with null fields: {}", orderRequest);
+        if (orderRequest == null || isInvalidOrder(orderRequest)) {
+            log.warn("❌ Invalid or null order received.");
             return;
         }
 
@@ -51,10 +49,16 @@ public class FraudDetectionService {
             if (fraudResult.isFraudulent()) {
                 log.warn("🚨 Fraudulent order detected: {}", orderRequest.getOrderId());
                 log.warn("🚨 Fraud reasons: {}", fraudResult.getReasons());
+
+                // ➕ Send fraud alert message to Kafka topic
+                String alertMessage = String.format("Fraud detected for order %s. Reasons: %s",
+                        orderRequest.getOrderId(), fraudResult.getReasons());
+
+                kafkaTemplate.send("fraud-notifications", alertMessage);
+                log.info("📤 Sent fraud alert to 'fraud-notifications' topic.");
             } else {
                 log.info("✅ Legitimate order approved: {}", orderRequest.getOrderId());
             }
-
 
         } catch (Exception e) {
             log.error("❌ Error processing order: {} from offset: {}", orderRequest, offset, e);
@@ -66,7 +70,6 @@ public class FraudDetectionService {
                 orderRequest.getUserId() == null ||
                 orderRequest.getAmount() == null;
     }
-
 
     private FraudResult performFraudDetection(OrderRequest order) {
         FraudResult result = new FraudResult();
@@ -101,5 +104,4 @@ public class FraudDetectionService {
             return reasons;
         }
     }
-
 }
